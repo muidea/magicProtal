@@ -3,12 +3,12 @@
 <app name="magicProtal">
     <content>
         <catalogs>
-            <catalog name="index" description="首页"/>
-            <catalog name="produce" description="产品介绍"/>
-            <catalog name="blog" description="博客"/>
-            <catalog name="contact" description="联系方式"/>
-            <catalog name="about" description="关于本站"/>
-            <catalog name="nofound" description="404页面"/>
+            <catalog name="Index" description="首页"/>
+            <catalog name="Produce" description="产品介绍"/>
+            <catalog name="Blog" description="博客"/>
+            <catalog name="Contact" description="联系方式"/>
+            <catalog name="About" description="关于本站"/>
+            <catalog name="404" description="404页面"/>
         </catalogs>
     </content>
 </app>

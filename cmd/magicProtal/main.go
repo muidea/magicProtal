@@ -24,17 +24,17 @@ func main() {
 
 	router := engine.NewRouter()
 
-	share, ok := magicprotal.New(centerServer, endpointName, endpointID, authToken)
+	protal, ok := magicprotal.New(centerServer, endpointName, endpointID, authToken)
 	if ok {
-		share.Startup(router)
+		protal.Startup(router)
 
 		svr := engine.NewHTTPServer(bindPort)
 		svr.Bind(router)
 
 		svr.Run()
 	} else {
-		log.Printf("new Share failed.")
+		log.Printf("new Protal failed.")
 	}
 
-	share.Teardown()
+	protal.Teardown()
 }

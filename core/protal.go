@@ -1,15 +1,11 @@
 package core
 
 import (
-	"encoding/json"
+	"html/template"
 	"log"
 	"net/http"
-	"strconv"
 
 	"muidea.com/magicCommon/agent"
-	common_const "muidea.com/magicCommon/common"
-	common_def "muidea.com/magicCommon/def"
-	"muidea.com/magicCommon/foundation/net"
 	"muidea.com/magicCommon/model"
 	engine "muidea.com/magicEngine"
 )
@@ -38,95 +34,75 @@ func newRoute(pattern, method string, handler interface{}) engine.Route {
 
 // New 新建Protal
 func New(centerServer, name, endpointID, authToken string) (Protal, bool) {
-	share := Protal{}
+	protal := Protal{}
 
 	agent := agent.New()
 	authToken, sessionID, ok := agent.Start(centerServer, endpointID, authToken)
 	if !ok {
-		return share, false
+		return protal, false
 	}
-	shareCatalog, ok := agent.FetchSummary(name, model.CATALOG, authToken, sessionID)
+	protalCatalog, ok := agent.FetchSummary(name, model.CATALOG, authToken, sessionID)
 	if !ok {
-		log.Print("fetch share root ctalog failed.")
-		return share, false
+		log.Print("fetch protal root ctalog failed.")
+		return protal, false
 	}
 
-	shareContent := agent.QuerySummaryContent(shareCatalog.ID, model.CATALOG, authToken, sessionID)
-	shareView, ok := share.getProtalView(shareContent)
-	if !ok {
-		log.Print("get ProtalView failed.")
-		return share, false
-	}
+	protalContent := agent.QuerySummaryContent(protalCatalog.ID, model.CATALOG, authToken, sessionID)
 
-	privacyView, ok := share.getPrivacyView(shareContent)
-	if !ok {
-		log.Print("get PrivacyView failed.")
-		return share, false
-	}
+	protal.centerAgent = agent
+	protal.protalInfo = protalCatalog
+	protal.protalContent = protalContent
+	protal.endpointID = endpointID
+	protal.authToken = authToken
+	protal.sessionID = sessionID
 
-	share.shareView = shareView
-	share.privacyView = privacyView
-
-	share.centerAgent = agent
-	share.shareInfo = shareCatalog
-	share.endpointID = endpointID
-	share.authToken = authToken
-	share.sessionID = sessionID
-
-	return share, true
+	return protal, true
 }
 
 // Protal Protal对象
 type Protal struct {
-	centerAgent agent.Agent
-	shareInfo   model.SummaryView
-	endpointID  string
-	authToken   string
-	sessionID   string
-
-	shareView   model.SummaryView
-	privacyView model.SummaryView
+	centerAgent   agent.Agent
+	protalInfo    model.SummaryView
+	protalContent []model.SummaryView
+	endpointID    string
+	authToken     string
+	sessionID     string
 }
 
 // Startup 启动
 func (s *Protal) Startup(router engine.Router) {
-	catalog := &model.Catalog{ID: s.privacyView.ID, Name: s.privacyView.Name}
-	s.centerAgent.StrictCatalog(catalog)
+	defaultRoute := newRoute("/", "GET", s.mainPage)
+	router.AddRoute(defaultRoute)
 
-	statusRoute := newRoute("/user/status/", "GET", s.statusAction)
-	router.AddRoute(statusRoute)
+	indexRoute := newRoute("/index.html", "GET", s.mainPage)
+	router.AddRoute(indexRoute)
 
-	loginRoute := newRoute("/user/login/", "POST", s.loginAction)
-	router.AddRoute(loginRoute)
+	productRoute := newRoute("/product.html", "GET", s.productPage)
+	router.AddRoute(productRoute)
 
-	logoutRoute := newRoute("/user/logout/", "DELETE", s.logoutAction)
-	router.AddRoute(logoutRoute)
+	blogRoute := newRoute("/blog.html", "GET", s.blogPage)
+	router.AddRoute(blogRoute)
 
-	mainRoute := newRoute("/file/", "GET", s.mainPage)
-	router.AddRoute(mainRoute)
+	aboutRoute := newRoute("/about.html", "GET", s.aboutPage)
+	router.AddRoute(aboutRoute)
 
-	viewRoute := newRoute("/file/:id", "GET", s.viewPage)
-	router.AddRoute(viewRoute)
+	contactRoute := newRoute("/contact.html", "GET", s.contactPage)
+	router.AddRoute(contactRoute)
 
-	createRoute := newRoute("/file/", "POST", s.createAction)
-	router.AddRoute(createRoute)
-
-	deleteRoute := newRoute("/file/:id", "DELETE", s.deleteAction)
-	router.AddRoute(deleteRoute)
+	noFoundRoute := newRoute("/404.html", "GET", s.noFoundPage)
+	router.AddRoute(noFoundRoute)
 }
 
 // Teardown 销毁
 func (s *Protal) Teardown() {
 	if s.centerAgent != nil {
-		s.centerAgent.UnstrictCatalog()
-
 		s.centerAgent.Stop()
 	}
 }
 
-func (s *Protal) getProtalView(shareContent []model.SummaryView) (model.SummaryView, bool) {
-	for _, v := range shareContent {
-		if v.Name == "shareCatalog" && v.Type == model.CATALOG {
+func (s *Protal) getIndexView() (model.SummaryView, bool) {
+	for _, v := range s.protalContent {
+		if v.Name == "Index" && v.Type == model.CATALOG {
 			return v, true
 		}
 	}
@@ -134,9 +110,49 @@ func (s *Protal) getProtalView(shareContent []model.SummaryView) (model.SummaryV
 	return model.SummaryView{}, false
 }
 
-func (s *Protal) getPrivacyView(shareContent []model.SummaryView) (model.SummaryView, bool) {
-	for _, v := range shareContent {
-		if v.Name == "privacyCatalog" && v.Type == model.CATALOG {
+func (s *Protal) getProductView() (model.SummaryView, bool) {
+	for _, v := range s.protalContent {
+		if v.Name == "Product" && v.Type == model.CATALOG {
+			return v, true
+		}
+	}
+
+	return model.SummaryView{}, false
+}
+
+func (s *Protal) getBlogView() (model.SummaryView, bool) {
+	for _, v := range s.protalContent {
+		if v.Name == "Blog" && v.Type == model.CATALOG {
+			return v, true
+		}
+	}
+
+	return model.SummaryView{}, false
+}
+
+func (s *Protal) getAboutView() (model.SummaryView, bool) {
+	for _, v := range s.protalContent {
+		if v.Name == "About" && v.Type == model.ARTICLE {
+			return v, true
+		}
+	}
+
+	return model.SummaryView{}, false
+}
+
+func (s *Protal) getContactView() (model.SummaryView, bool) {
+	for _, v := range s.protalContent {
+		if v.Name == "Contact" && v.Type == model.ARTICLE {
+			return v, true
+		}
+	}
+
+	return model.SummaryView{}, false
+}
+
+func (s *Protal) get404View() (model.SummaryView, bool) {
+	for _, v := range s.protalContent {
+		if v.Name == "404" && v.Type == model.ARTICLE {
 			return v, true
 		}
 	}
@@ -147,177 +163,113 @@ func (s *Protal) getPrivacyView(shareContent []model.SummaryView) (model.Summary
 func (s *Protal) mainPage(res http.ResponseWriter, req *http.Request) {
 	log.Print("mainPage")
 
-	type mainResult struct {
-		common_def.QuerySummaryListResult
-		PrivacyPolicy []model.Catalog `json:"privacyPolicy"`
+	pageFile := "static/default/index.html"
+	_, ok := s.getIndexView()
+	if ok {
+		pageFile = "static/template/index.html"
 	}
+	t, err := template.ParseFiles(pageFile)
+	if err != nil {
+		log.Printf("parseFiles exception, err:%s", err.Error())
 
-	result := mainResult{QuerySummaryListResult: common_def.QuerySummaryListResult{Summary: []model.SummaryView{}}}
-	authToken := req.URL.Query().Get(common_const.AuthToken)
-	sessionID := req.URL.Query().Get(common_const.SessionID)
-	onlineEntry, _, _, isLogin := s.centerAgent.StatusAccount(authToken, sessionID)
-	catalog := req.URL.Query().Get("catalog")
-	for {
-		cid := -1
-		if len(catalog) > 0 {
-			id, err := strconv.Atoi(catalog)
-			if err != nil {
-				result.ErrorCode = common_def.IllegalParam
-				result.Reason = "无效参数"
-				break
-			}
-
-			cid = id
-		}
-
-		shareList := []model.SummaryView{}
-		privacyList := []model.SummaryView{}
-
-		shareList = s.flatSummaryContent(s.shareView.ID, model.CATALOG, -1)
-		if isLogin {
-			privacyList = s.flatSummaryContent(s.privacyView.ID, model.CATALOG, onlineEntry.ID)
-		}
-
-		if cid >= 0 {
-			for _, val := range shareList {
-				if existCatalogArray(cid, val.Catalog) {
-					if !existSummaryArray(val.ID, result.Summary) {
-						result.Summary = append(result.Summary, val)
-					}
-				}
-			}
-			for _, val := range privacyList {
-				if existCatalogArray(cid, val.Catalog) {
-					if !existSummaryArray(val.ID, result.Summary) {
-						result.Summary = append(result.Summary, val)
-					}
-				}
-			}
-		} else {
-			for _, val := range shareList {
-				if !existSummaryArray(val.ID, result.Summary) {
-					result.Summary = append(result.Summary, val)
-				}
-			}
-
-			for _, val := range privacyList {
-				if !existSummaryArray(val.ID, result.Summary) {
-					result.Summary = append(result.Summary, val)
-				}
-			}
-		}
-
-		result.PrivacyPolicy = append(result.PrivacyPolicy, model.Catalog{ID: s.shareView.ID, Name: s.shareView.Description})
-		result.PrivacyPolicy = append(result.PrivacyPolicy, model.Catalog{ID: s.privacyView.ID, Name: s.privacyView.Description})
-
-		result.ErrorCode = common_def.Success
-		break
-	}
-
-	block, err := json.Marshal(result)
-	if err == nil {
-		res.Write(block)
+		http.Redirect(res, req, "/404.html", http.StatusNotFound)
 		return
 	}
 
-	log.Print("mainPage, json.Marshal, failed, err:" + err.Error())
+	t.Execute(res, nil)
 }
 
-func (s *Protal) viewPage(res http.ResponseWriter, req *http.Request) {
-	log.Print("viewPage")
+func (s *Protal) productPage(res http.ResponseWriter, req *http.Request) {
+	log.Print("productPage")
 
-	type viewResult struct {
-		common_def.QueryMediaResult
-		AuthToken string `json:"authToken"`
-		SessionID string `json:"sessionID"`
+	pageFile := "static/default/product.html"
+	_, ok := s.getProductView()
+	if ok {
+		pageFile = "static/template/product.html"
 	}
+	t, err := template.ParseFiles(pageFile)
+	if err != nil {
+		log.Printf("parseFiles exception, err:%s", err.Error())
 
-	result := viewResult{}
-	for {
-		_, value := net.SplitRESTAPI(req.URL.Path)
-		id, err := strconv.Atoi(value)
-		if err != nil {
-			log.Printf("viewPage, query media failed, illegal id, id:%s, err:%s", value, err.Error())
-			result.ErrorCode = common_def.Failed
-			result.Reason = "非法参数"
-			break
-		}
-
-		media, ok := s.centerAgent.QueryMedia(id, s.authToken, s.sessionID)
-		if !ok {
-			log.Print("viewPage, query media failed, illegal id or no exist")
-			result.ErrorCode = common_def.NoExist
-			result.Reason = "对象不存在"
-			break
-		}
-
-		result.Media = media
-		result.AuthToken = s.authToken
-		result.SessionID = s.sessionID
-		result.ErrorCode = common_def.Success
-		break
-	}
-
-	block, err := json.Marshal(result)
-	if err == nil {
-		res.Write(block)
+		http.Redirect(res, req, "/404.html", http.StatusNotFound)
 		return
 	}
 
-	log.Print("viewPage, json.Marshal, failed, err:" + err.Error())
+	t.Execute(res, nil)
 }
 
-func (s *Protal) flatSummaryContent(id int, summaryType string, user int) []model.SummaryView {
-	retList := []model.SummaryView{}
-	summaryList := []model.SummaryView{}
-	subList := []model.SummaryView{}
+func (s *Protal) blogPage(res http.ResponseWriter, req *http.Request) {
+	log.Print("blogPage")
 
-	if user == -1 {
-		summaryList = s.centerAgent.QuerySummaryContent(id, summaryType, s.authToken, s.sessionID)
-	} else {
-		summaryList = s.centerAgent.QuerySummaryContentByUser(id, summaryType, s.authToken, s.sessionID, user)
+	pageFile := "static/default/blog.html"
+	_, ok := s.getProductView()
+	if ok {
+		pageFile = "static/template/blog.html"
 	}
-	for _, val := range summaryList {
-		if val.Type == summaryType {
-			if user == -1 {
-				subList = s.centerAgent.QuerySummaryContent(val.ID, summaryType, s.authToken, s.sessionID)
-			} else {
-				subList = s.centerAgent.QuerySummaryContentByUser(val.ID, summaryType, s.authToken, s.sessionID, user)
-			}
+	t, err := template.ParseFiles(pageFile)
+	if err != nil {
+		log.Printf("parseFiles exception, err:%s", err.Error())
 
-			for _, subVal := range subList {
-				if !existSummaryArray(subVal.ID, retList) {
-					retList = append(retList, subVal)
-				}
-			}
-
-			continue
-		}
-
-		if !existSummaryArray(val.ID, retList) {
-			retList = append(retList, val)
-		}
+		http.Redirect(res, req, "/404.html", http.StatusNotFound)
+		return
 	}
 
-	return retList
+	t.Execute(res, nil)
 }
 
-func existCatalogArray(id int, catalogs []model.Catalog) bool {
-	for _, val := range catalogs {
-		if val.ID == id {
-			return true
-		}
+func (s *Protal) aboutPage(res http.ResponseWriter, req *http.Request) {
+	log.Print("aboutPage")
+
+	pageFile := "static/default/about.html"
+	_, ok := s.getProductView()
+	if ok {
+		pageFile = "static/template/about.html"
+	}
+	t, err := template.ParseFiles(pageFile)
+	if err != nil {
+		log.Printf("parseFiles exception, err:%s", err.Error())
+
+		http.Redirect(res, req, "/404.html", http.StatusNotFound)
+		return
 	}
 
-	return false
+	t.Execute(res, nil)
 }
 
-func existSummaryArray(id int, summarys []model.SummaryView) bool {
-	for _, val := range summarys {
-		if val.ID == id {
-			return true
-		}
+func (s *Protal) contactPage(res http.ResponseWriter, req *http.Request) {
+	log.Print("contactPage")
+
+	pageFile := "static/default/contact.html"
+	_, ok := s.getProductView()
+	if ok {
+		pageFile = "static/template/contact.html"
+	}
+	t, err := template.ParseFiles(pageFile)
+	if err != nil {
+		log.Printf("parseFiles exception, err:%s", err.Error())
+
+		http.Redirect(res, req, "/404.html", http.StatusNotFound)
+		return
 	}
 
-	return false
+	t.Execute(res, nil)
+}
+
+func (s *Protal) noFoundPage(res http.ResponseWriter, req *http.Request) {
+	log.Print("noFoundPage")
+
+	pageFile := "static/default/404.html"
+	_, ok := s.getProductView()
+	if ok {
+		pageFile = "static/template/404.html"
+	}
+	t, err := template.ParseFiles(pageFile)
+	if err != nil {
+		log.Printf("parseFiles exception, err:%s", err.Error())
+
+		http.Redirect(res, req, "/404.html", http.StatusNotFound)
+		return
+	}
+
+	t.Execute(res, nil)
 }
