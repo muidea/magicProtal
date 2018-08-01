@@ -12,7 +12,7 @@ import (
 	"muidea.com/magicCommon/model"
 )
 
-func (s *Share) createAction(res http.ResponseWriter, req *http.Request) {
+func (s *Protal) createAction(res http.ResponseWriter, req *http.Request) {
 	log.Print("createAction")
 
 	type createParam struct {
@@ -73,7 +73,7 @@ func (s *Share) createAction(res http.ResponseWriter, req *http.Request) {
 	res.WriteHeader(http.StatusExpectationFailed)
 }
 
-func (s *Share) deleteAction(res http.ResponseWriter, req *http.Request) {
+func (s *Protal) deleteAction(res http.ResponseWriter, req *http.Request) {
 	log.Print("deleteAction")
 
 	result := common_def.DestroyMediaResult{}

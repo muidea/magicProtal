@@ -10,7 +10,7 @@ import (
 	"muidea.com/magicCommon/foundation/net"
 )
 
-func (s *Share) statusAction(res http.ResponseWriter, req *http.Request) {
+func (s *Protal) statusAction(res http.ResponseWriter, req *http.Request) {
 	log.Print("statusAction")
 
 	result := common_def.StatusAccountResult{}
@@ -48,7 +48,7 @@ func (s *Share) statusAction(res http.ResponseWriter, req *http.Request) {
 	res.WriteHeader(http.StatusExpectationFailed)
 }
 
-func (s *Share) loginAction(res http.ResponseWriter, req *http.Request) {
+func (s *Protal) loginAction(res http.ResponseWriter, req *http.Request) {
 	log.Print("loginAction")
 
 	param := &common_def.LoginAccountParam{}
@@ -86,7 +86,7 @@ func (s *Share) loginAction(res http.ResponseWriter, req *http.Request) {
 	res.WriteHeader(http.StatusExpectationFailed)
 }
 
-func (s *Share) logoutAction(res http.ResponseWriter, req *http.Request) {
+func (s *Protal) logoutAction(res http.ResponseWriter, req *http.Request) {
 	log.Print("logoutAction")
 
 	result := common_def.LogoutAccountResult{}

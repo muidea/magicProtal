@@ -36,9 +36,9 @@ func newRoute(pattern, method string, handler interface{}) engine.Route {
 	return &route{pattern: pattern, method: method, handler: handler}
 }
 
-// New 新建Share
-func New(centerServer, name, endpointID, authToken string) (Share, bool) {
-	share := Share{}
+// New 新建Protal
+func New(centerServer, name, endpointID, authToken string) (Protal, bool) {
+	share := Protal{}
 
 	agent := agent.New()
 	authToken, sessionID, ok := agent.Start(centerServer, endpointID, authToken)
@@ -52,9 +52,9 @@ func New(centerServer, name, endpointID, authToken string) (Share, bool) {
 	}
 
 	shareContent := agent.QuerySummaryContent(shareCatalog.ID, model.CATALOG, authToken, sessionID)
-	shareView, ok := share.getShareView(shareContent)
+	shareView, ok := share.getProtalView(shareContent)
 	if !ok {
-		log.Print("get ShareView failed.")
+		log.Print("get ProtalView failed.")
 		return share, false
 	}
 
@@ -76,8 +76,8 @@ func New(centerServer, name, endpointID, authToken string) (Share, bool) {
 	return share, true
 }
 
-// Share Share对象
-type Share struct {
+// Protal Protal对象
+type Protal struct {
 	centerAgent agent.Agent
 	shareInfo   model.SummaryView
 	endpointID  string
@@ -89,7 +89,7 @@ type Share struct {
 }
 
 // Startup 启动
-func (s *Share) Startup(router engine.Router) {
+func (s *Protal) Startup(router engine.Router) {
 	catalog := &model.Catalog{ID: s.privacyView.ID, Name: s.privacyView.Name}
 	s.centerAgent.StrictCatalog(catalog)
 
@@ -116,7 +116,7 @@ func (s *Share) Startup(router engine.Router) {
 }
 
 // Teardown 销毁
-func (s *Share) Teardown() {
+func (s *Protal) Teardown() {
 	if s.centerAgent != nil {
 		s.centerAgent.UnstrictCatalog()
 
@@ -124,7 +124,7 @@ func (s *Share) Teardown() {
 	}
 }
 
-func (s *Share) getShareView(shareContent []model.SummaryView) (model.SummaryView, bool) {
+func (s *Protal) getProtalView(shareContent []model.SummaryView) (model.SummaryView, bool) {
 	for _, v := range shareContent {
 		if v.Name == "shareCatalog" && v.Type == model.CATALOG {
 			return v, true
@@ -134,7 +134,7 @@ func (s *Share) getShareView(shareContent []model.SummaryView) (model.SummaryVie
 	return model.SummaryView{}, false
 }
 
-func (s *Share) getPrivacyView(shareContent []model.SummaryView) (model.SummaryView, bool) {
+func (s *Protal) getPrivacyView(shareContent []model.SummaryView) (model.SummaryView, bool) {
 	for _, v := range shareContent {
 		if v.Name == "privacyCatalog" && v.Type == model.CATALOG {
 			return v, true
@@ -144,7 +144,7 @@ func (s *Share) getPrivacyView(shareContent []model.SummaryView) (model.SummaryV
 	return model.SummaryView{}, false
 }
 
-func (s *Share) mainPage(res http.ResponseWriter, req *http.Request) {
+func (s *Protal) mainPage(res http.ResponseWriter, req *http.Request) {
 	log.Print("mainPage")
 
 	type mainResult struct {
@@ -223,7 +223,7 @@ func (s *Share) mainPage(res http.ResponseWriter, req *http.Request) {
 	log.Print("mainPage, json.Marshal, failed, err:" + err.Error())
 }
 
-func (s *Share) viewPage(res http.ResponseWriter, req *http.Request) {
+func (s *Protal) viewPage(res http.ResponseWriter, req *http.Request) {
 	log.Print("viewPage")
 
 	type viewResult struct {
@@ -267,7 +267,7 @@ func (s *Share) viewPage(res http.ResponseWriter, req *http.Request) {
 	log.Print("viewPage, json.Marshal, failed, err:" + err.Error())
 }
 
-func (s *Share) flatSummaryContent(id int, summaryType string, user int) []model.SummaryView {
+func (s *Protal) flatSummaryContent(id int, summaryType string, user int) []model.SummaryView {
 	retList := []model.SummaryView{}
 	summaryList := []model.SummaryView{}
 	subList := []model.SummaryView{}

@@ -1,10 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<app name="magicShare">
+<app name="magicProtal">
     <content>
         <catalogs>
-            <catalog name="shareCatalog" description="共享文件"/>
-            <catalog name="privacyCatalog" description="私有文件"/>
+            <catalog name="index" description="首页"/>
+            <catalog name="produce" description="产品介绍"/>
+            <catalog name="blog" description="博客"/>
+            <catalog name="contact" description="联系方式"/>
+            <catalog name="about" description="关于本站"/>
+            <catalog name="nofound" description="404页面"/>
         </catalogs>
     </content>
 </app>
