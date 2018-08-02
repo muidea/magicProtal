@@ -83,6 +83,9 @@ func (s *Protal) Startup(router engine.Router) {
 	blogRoute := newRoute("/blog.html", "GET", s.blogPage)
 	router.AddRoute(blogRoute)
 
+	detailRoute := newRoute("/detail.html", "GET", s.detailPage)
+	router.AddRoute(detailRoute)
+
 	aboutRoute := newRoute("/about.html", "GET", s.aboutPage)
 	router.AddRoute(aboutRoute)
 
@@ -205,6 +208,25 @@ func (s *Protal) blogPage(res http.ResponseWriter, req *http.Request) {
 	_, ok := s.getProductView()
 	if ok {
 		pageFile = "static/template/blog.html"
+	}
+	t, err := template.ParseFiles(pageFile)
+	if err != nil {
+		log.Printf("parseFiles exception, err:%s", err.Error())
+
+		http.Redirect(res, req, "/404.html", http.StatusNotFound)
+		return
+	}
+
+	t.Execute(res, nil)
+}
+
+func (s *Protal) detailPage(res http.ResponseWriter, req *http.Request) {
+	log.Print("detailPage")
+
+	pageFile := "static/default/detail.html"
+	_, ok := s.getProductView()
+	if ok {
+		pageFile = "static/template/detail.html"
 	}
 	t, err := template.ParseFiles(pageFile)
 	if err != nil {
