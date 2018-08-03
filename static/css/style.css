@@ -1133,7 +1133,7 @@ h4.contact-head {
 .map-border{
 	border: 2px solid #FFF;
 }
-.list3 li>img {
+.contactInfo li>img {
 	float: left;
 	margin-right: 10px;
 }
