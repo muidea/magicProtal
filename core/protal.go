@@ -41,13 +41,13 @@ func New(centerServer, name, endpointID, authToken string) (Protal, bool) {
 	if !ok {
 		return protal, false
 	}
-	protalCatalog, ok := agent.FetchSummary(name, model.CATALOG, authToken, sessionID)
+	protalCatalog, ok := agent.FetchSummary(name, model.CATALOG, authToken, sessionID, nil)
 	if !ok {
 		log.Print("fetch protal root ctalog failed.")
 		return protal, false
 	}
 
-	protalContent := agent.QuerySummaryContent(protalCatalog.ID, model.CATALOG, authToken, sessionID)
+	protalContent, _ := agent.QuerySummaryContent(*(protalCatalog.CatalogUnit()), nil, authToken, sessionID)
 
 	protal.centerAgent = agent
 	protal.protalInfo = protalCatalog

@@ -12,7 +12,7 @@ var bindPort = "8866"
 var centerServer = "127.0.0.1:8888"
 var endpointName = "magicProtal"
 var endpointID = "8a30313b-50ed-4a3a-b52b-e0d3e000d400"
-var authToken = "ZA7gLdcpeabhFFQXWH7N3HSXHxK2LnAU"
+var authToken = "1xlUfmwNZ6nIsIpDUTax17TbgpaSI1Xj"
 
 func main() {
 	flag.StringVar(&bindPort, "ListenPort", bindPort, "magicProtal listen address")
