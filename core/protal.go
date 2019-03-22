@@ -5,9 +5,9 @@ import (
 	"log"
 	"net/http"
 
-	"muidea.com/magicCommon/agent"
-	"muidea.com/magicCommon/model"
-	engine "muidea.com/magicEngine"
+	"github.com/muidea/magicCommon/agent"
+	"github.com/muidea/magicCommon/model"
+	engine "github.com/muidea/magicEngine"
 )
 
 type route struct {
